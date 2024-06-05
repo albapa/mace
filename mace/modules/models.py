@@ -805,6 +805,7 @@ class AtomicDipolesMACE(torch.nn.Module):
         output = {
             "dipole": total_dipole,
             "atomic_dipoles": atomic_dipoles,
+            "dipoles": atomic_dipoles,
         }
         return output
 

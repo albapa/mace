@@ -74,6 +74,8 @@ class MACECalculator(Calculator):
             ]
         elif model_type == "DipoleMACE":
             self.implemented_properties = ["dipole"]
+        elif model_type == "DipolesMACE":
+            self.implemented_properties = ["dipoles"]
         elif model_type == "EnergyDipoleMACE":
             self.implemented_properties = [
                 "energy",
@@ -82,10 +84,11 @@ class MACECalculator(Calculator):
                 "forces",
                 "stress",
                 "dipole",
+                "dipoles",
             ]
         else:
             raise ValueError(
-                f"Give a valid model_type: [MACE, DipoleMACE, EnergyDipoleMACE], {model_type} not supported"
+                f"Give a valid model_type: [MACE, DipoleMACE, DipolesMACE, EnergyDipoleMACE], {model_type} not supported"
             )
 
         if "model_path" in kwargs:
@@ -111,6 +114,8 @@ class MACECalculator(Calculator):
                 )
             elif model_type == "DipoleMACE":
                 self.implemented_properties.extend(["dipole_var"])
+            elif model_type == "DipolesMACE":
+                self.implemented_properties.extend(["dipoles_var"])
         if compile_mode is not None:
             print(f"Torch compile is enabled with mode: {compile_mode}")
             self.models = [
@@ -190,6 +195,9 @@ class MACECalculator(Calculator):
         if model_type in ["EnergyDipoleMACE", "DipoleMACE"]:
             dipole = torch.zeros(num_models, 3, device=self.device)
             dict_of_tensors.update({"dipole": dipole})
+        if model_type in ["DipolesMACE"]:
+            dipoles = torch.zeros(num_models, num_atoms, 3, device=self.device)
+            dict_of_tensors.update({"dipoles": dipoles})
         return dict_of_tensors
 
     def _prepare_batch(self, batch):
@@ -250,6 +258,8 @@ class MACECalculator(Calculator):
                     ret_tensors["stress"][i] = out["stress"].detach()
             if self.model_type in ["DipoleMACE", "EnergyDipoleMACE"]:
                 ret_tensors["dipole"][i] = out["dipole"].detach()
+            if self.model_type in ["DipolesMACE"]:
+                ret_tensors["dipoles"][i] = out["dipoles"].detach()
 
         self.results = {}
         if self.model_type in ["MACE", "EnergyDipoleMACE"]:
@@ -305,6 +315,17 @@ class MACECalculator(Calculator):
                     .cpu()
                     .numpy()
                 )
+        if self.model_type in ["DipolesMACE"]:
+            self.results["dipoles"] = (
+                torch.mean(ret_tensors["dipoles"], dim=0).cpu().numpy()
+            )
+            if self.num_models > 1:
+                self.results["dipoles_var"] = (
+                    torch.var(ret_tensors["dipoles"], dim=0, unbiased=False)
+                    .cpu()
+                    .numpy()
+                )
+
 
     def get_descriptors(self, atoms=None, invariants_only=True, num_layers=-1):
         """Extracts the descriptors from MACE model.

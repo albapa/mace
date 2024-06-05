@@ -37,6 +37,7 @@ class Configuration:
     stress: Optional[Stress] = None  # eV/Angstrom^3
     virials: Optional[Virials] = None  # eV
     dipole: Optional[Vector] = None  # Debye
+    dipoles: Optional[Forces] = None  # Debye
     charges: Optional[Charges] = None  # atomic unit
     cell: Optional[Cell] = None
     pbc: Optional[Pbc] = None
@@ -77,6 +78,7 @@ def config_from_atoms_list(
     stress_key="stress",
     virials_key="virials",
     dipole_key="dipole",
+    dipoles_key="dipoles",
     charges_key="charges",
     config_type_weights: Dict[str, float] = None,
 ) -> Configurations:
@@ -94,6 +96,7 @@ def config_from_atoms_list(
                 stress_key=stress_key,
                 virials_key=virials_key,
                 dipole_key=dipole_key,
+                dipoles_key=dipoles_key,
                 charges_key=charges_key,
                 config_type_weights=config_type_weights,
             )
@@ -108,6 +111,7 @@ def config_from_atoms(
     stress_key="stress",
     virials_key="virials",
     dipole_key="dipole",
+    dipoles_key="dipoles",
     charges_key="charges",
     config_type_weights: Dict[str, float] = None,
 ) -> Configuration:
@@ -120,6 +124,7 @@ def config_from_atoms(
     stress = atoms.info.get(stress_key, None)  # eV / Ang ^ 3
     virials = atoms.info.get(virials_key, None)
     dipole = atoms.info.get(dipole_key, None)  # Debye
+    dipoles = atoms.arrays.get(dipoles_key, None)  # eV / Ang
     # Charges default to 0 instead of None if not found
     charges = atoms.arrays.get(charges_key, np.zeros(len(atoms)))  # atomic unit
     atomic_numbers = np.array(
@@ -152,6 +157,8 @@ def config_from_atoms(
     if dipole is None:
         dipole = np.zeros(3)
         # dipoles_weight = 0.0
+    if dipoles is None:
+        dipoles = np.zeros(np.shape(atoms.positions))
 
     return Configuration(
         atomic_numbers=atomic_numbers,
@@ -161,6 +168,7 @@ def config_from_atoms(
         stress=stress,
         virials=virials,
         dipole=dipole,
+        dipoles=dipoles,
         charges=charges,
         weight=weight,
         energy_weight=energy_weight,
@@ -197,6 +205,7 @@ def load_from_xyz(
     stress_key: str = "stress",
     virials_key: str = "virials",
     dipole_key: str = "dipole",
+    dipoles_key: str = "dipoles",
     charges_key: str = "charges",
     extract_atomic_energies: bool = False,
     keep_isolated_atoms: bool = False,

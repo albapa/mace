@@ -145,6 +145,7 @@ def run(args: argparse.Namespace) -> None:
         stress_key=args.stress_key,
         virials_key=args.virials_key,
         dipole_key=args.dipole_key,
+        dipoles_key=args.dipoles_key,
         charges_key=args.charges_key,
     )
 

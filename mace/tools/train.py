@@ -94,6 +94,11 @@ def valid_err_log(valid_loss, eval_metrics, logger, log_errors, epoch=None):
         logging.info(
             f"Epoch {epoch}: loss={valid_loss:.4f}, RMSE_MU_per_atom={error_mu:.2f} mDebye"
         )
+    elif log_errors == "DipolesRMSE":
+        error_dipoles = eval_metrics["rmse_dipoles"] * 1e3
+        logging.info(
+            f"Epoch {epoch}: loss={valid_loss:.4f}, RMSE_dipoles={error_dipoles:.2f} mDebye"
+        )
     elif log_errors == "EnergyDipoleRMSE":
         error_e = eval_metrics["rmse_e_per_atom"] * 1e3
         error_f = eval_metrics["rmse_f"] * 1e3
@@ -400,6 +405,10 @@ class MACELoss(Metric):
         self.add_state("delta_mus", default=[], dist_reduce_fx="cat")
         self.add_state("delta_mus_per_atom", default=[], dist_reduce_fx="cat")
 
+        self.add_state("dipoles_computed", default=torch.tensor(0.0), dist_reduce_fx="sum")
+        self.add_state("dipoles", default=[], dist_reduce_fx="cat")
+        self.add_state("delta_dipoles", default=[], dist_reduce_fx="cat")
+
     def update(self, batch, output):  # pylint: disable=arguments-differ
         loss = self.loss_fn(pred=output, ref=batch)
         self.total_loss += loss
@@ -437,6 +446,10 @@ class MACELoss(Metric):
                 (batch.dipole - output["dipole"])
                 / (batch.ptr[1:] - batch.ptr[:-1]).unsqueeze(-1)
             )
+        if output.get("dipoles") is not None and batch.dipoles is not None:
+            self.dipoles_computed += 1.0
+            self.dipoles.append(batch.dipoles)
+            self.delta_dipoles.append(batch.dipoles - output["dipoles"])
 
     def convert(self, delta: Union[torch.Tensor, List[torch.Tensor]]) -> np.ndarray:
         if isinstance(delta, list):
@@ -487,5 +500,13 @@ class MACELoss(Metric):
             aux["rmse_mu_per_atom"] = compute_rmse(delta_mus_per_atom)
             aux["rel_rmse_mu"] = compute_rel_rmse(delta_mus, mus)
             aux["q95_mu"] = compute_q95(delta_mus)
+        if self.dipoles_computed:
+            dipoles = self.convert(self.dipoles)
+            delta_dipoles = self.convert(self.delta_dipoles)
+            aux["mae_dipoles"] = compute_mae(delta_dipoles)
+            aux["rel_mae_dipoles"] = compute_rel_mae(delta_dipoles, dipoles)
+            aux["rmse_dipoles"] = compute_rmse(delta_dipoles)
+            aux["rel_rmse_dipoles"] = compute_rel_rmse(delta_dipoles, dipoles)
+            aux["q95_dipoles"] = compute_q95(delta_dipoles)
 
         return aux["loss"], aux

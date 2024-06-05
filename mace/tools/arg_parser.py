@@ -361,6 +361,12 @@ def build_default_arg_parser() -> argparse.ArgumentParser:
         default="dipole",
     )
     parser.add_argument(
+        "--dipoles_key",
+        help="Key of reference atomic dipoles in training xyz",
+        type=str,
+        default="dipoles",
+    )
+    parser.add_argument(
         "--charges_key",
         help="Key of atomic charges in training xyz",
         type=str,
@@ -379,6 +385,7 @@ def build_default_arg_parser() -> argparse.ArgumentParser:
             "virials",
             "stress",
             "dipole",
+            "dipoles",
             "huber",
             "universal",
             "energy_forces_dipole",
@@ -687,6 +694,12 @@ def build_preprocess_arg_parser() -> argparse.ArgumentParser:
         help="Key of reference dipoles in training xyz",
         type=str,
         default="dipole",
+    )
+    parser.add_argument(
+        "--dipoles_key",
+        help="Key of reference atomic dipoles in training xyz",
+        type=str,
+        default="dipoles",
     )
     parser.add_argument(
         "--charges_key",
