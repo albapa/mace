@@ -493,6 +493,7 @@ def run(args: argparse.Namespace) -> None:
                 "RealAgnosticInteractionBlock"
             ],
             MLP_irreps=o3.Irreps(args.MLP_irreps),
+            radial_type=args.radial_type,
             # dipole_scale=1,
             # dipole_shift=0,
         )
