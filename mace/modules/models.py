@@ -804,6 +804,10 @@ class AtomicDipolesMACE(torch.nn.Module):
         )  # [n_graphs,3]
         total_dipole = total_dipole + baseline
 
+        num_atoms = (data["ptr"][1:] - data["ptr"][:-1]).unsqueeze(-1)  # [n_graphs,1]
+     
+        atomic_dipoles = atomic_dipoles - (total_dipole[data["batch"]] / num_atoms[data["batch"]])
+
         output = {
             "dipole": total_dipole,
             "atomic_dipoles": atomic_dipoles,
