@@ -78,7 +78,7 @@ def weighted_mean_squared_error_dipole(ref: Batch, pred: TensorDict) -> torch.Te
 
 def mean_squared_error_dipoles(ref: Batch, pred: TensorDict) -> torch.Tensor:
     return torch.mean(
-        torch.square(ref["dipoles"] - pred["dipoles"])
+        torch.square(ref["dipoles"] - pred["dipoles"])*ref.num_graphs
     )  # []
 
 
@@ -352,7 +352,7 @@ class DipolesSingleLoss(torch.nn.Module):
 
     def forward(self, ref: Batch, pred: TensorDict) -> torch.Tensor:
         return (
-            self.dipole_weight * mean_squared_error_dipoles(ref, pred) * 100.0
+            self.dipole_weight * mean_squared_error_dipoles(ref, pred) * 1000.0
         )  # multiply by 100 to have the right scale for the loss
 
     def __repr__(self):
