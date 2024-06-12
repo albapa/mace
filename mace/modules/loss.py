@@ -77,8 +77,13 @@ def weighted_mean_squared_error_dipole(ref: Batch, pred: TensorDict) -> torch.Te
     # return torch.mean(torch.square((torch.reshape(ref['dipole'], pred["dipole"].shape) - pred['dipole']) / num_atoms))  # []
 
 def mean_squared_error_dipoles(ref: Batch, pred: TensorDict) -> torch.Tensor:
-    return torch.mean(
-        torch.square(ref["dipoles"] - pred["dipoles"])*ref.num_graphs
+    dipole_weights = torch.repeat_interleave(
+            ref.weight, ref.ptr[1:] - ref.ptr[:-1]
+            ).unsqueeze(
+        -1
+    )
+    return torch.mean(dipole_weights
+        * torch.square(ref["dipoles"] - pred["dipoles"])*ref.num_graphs
     )  # []
 
 
